@@ -55,6 +55,9 @@ app.get('/salesforceLogin', function (req, res) {
 //res.json({msg: 'salesforce Login  Failed!',username:username,password:password});
 });
 
+app.get('/', function (req, res) {
+  res.json({Message: "Server is running successfully!"})
+});
 
 app.post('/send-msg',(req,res)=>{
   console.log('req.body',req.body.input);
@@ -74,10 +77,6 @@ app.post('/products/:id', function (req, res, next) {
     res.json({msg: 'This is CORS-enabled for all origins!',
     data: req.body
 })
-})
-
-app.post('/sf', function (req, res, next) {
-    res.json({data: req.body,next: next})
 })
 
 
@@ -128,5 +127,5 @@ async function runSample(msg,projectId = 'demolt-uhyhbh') {
 
 const port = process.env.PORT || 5000;
 app.listen(port, () => {
-    console.log(`Our app is running on port ${ port }`);
+    console.log(`Sercer is running on port ${ port }`);
 });
