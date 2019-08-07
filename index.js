@@ -16,7 +16,7 @@ const sessionId = uuid.v4,
   password = "power123TszDHeS5nuvfDlli3I6RU7mY";
 
 app.use(cors());
-//app.use(bodyParser.json());
+app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
     extended: false
 }));
@@ -73,11 +73,17 @@ app.post('/sendMsg',(req,res)=>{
     })
 })
 
-app.post('/products/:id', function (req, res, next) {
+app.post('/cors', function (req, res, next) {
     res.json({msg: 'This is CORS-enabled for all origins!',
     data: req.body
-})
-})
+  });
+});
+
+app.post('/df', function (req, res, next) {
+    res.json({msg: 'df endpoint',
+    reqData: req.body
+  });
+});
 
 
 /**
@@ -127,5 +133,5 @@ async function runSample(msg,projectId = 'demolt-uhyhbh') {
 
 const port = process.env.PORT || 5000;
 app.listen(port, () => {
-    console.log(`Sercer is running on port ${ port }`);
+    console.log(`Server is running on port ${ port }`);
 });
