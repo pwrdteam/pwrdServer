@@ -80,9 +80,11 @@ app.post('/cors', function (req, res, next) {
 });
 
 app.post('/df', function (req, res, next) {
-    res.json({msg: 'df endpoint',
-    reqData: req.body
-  });
+  let resData = { msg: 'df endpoint',
+      reqData: req.body
+    }
+    console.log('resData ',resData);
+    res.json(resData);
 });
 
 
