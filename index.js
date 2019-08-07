@@ -5,7 +5,6 @@ const cors = require('cors');
 const bodyParser  = require('body-parser');
 const jsforce = require('jsforce');
 const app = express();
-const port = process.env.port || 5000;
 
 const sessionId = uuid.v4,
   //username ="pwrd-zg46@force.com",
@@ -127,6 +126,7 @@ async function runSample(msg,projectId = 'demolt-uhyhbh') {
   return responseMsg;
 }
 
-app.listen(port,()=>{
-    console.log(`running on port ${port}.`);
-})
+const port = process.env.PORT || 5000;
+app.listen(port, () => {
+    console.log(`Our app is running on port ${ port }`);
+});
