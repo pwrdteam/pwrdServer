@@ -19,7 +19,8 @@ const sessionId = uuid.v4,
   ConsumerKey = "3MVG9G9pzCUSkzZthsJ3o.DCpCyp3y5Ylr0Z9vr7MM8d.OQ7KfRGn6OkC2Ikcmm4b2PmtdyxbjgQBFUdVuytN",
   ConsumerSecret = "ACE5D3C6427268B9FB8829F1E41CBECD70CB575E3BAC2CF7782D69B2F508F40A",
   CallbackURL = "https://ap15.salesforce.com//oauth2/callback",
-  password = "power123TszDHeS5nuvfDlli3I6RU7mY";
+  password = "power123TszDHeS5nuvfDlli3I6RU7mY";  
+  
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -41,8 +42,7 @@ var conn = new jsforce.Connection({
     accessToken: SecurityToken
 });
 
-
-app.get('/salesforceLogin', function (req, res) {  
+const fnSalesforceLogin = (req, res) => {
   conn.login(username, password, function(err, userInfo) {
     if (err) { console.error(err);
       return res.json({msg: `salesforceLogin Unsuccessfully!`,
@@ -57,9 +57,31 @@ app.get('/salesforceLogin', function (req, res) {
     console.log("Org ID: " + userInfo.organizationId);
     res.json({msg: 'salesforceLogin Successfully!',accessToken:conn.accessToken
     ,instanceUrl:conn.instanceUrl,User_ID:userInfo.id,Org_ID:userInfo.organizationId});
-  });
+  });  
 //res.json({msg: 'salesforce Login  Failed!',username:username,password:password});
-});
+}
+
+const fnGetSFContacts = (req, res) => {
+  var query1 = "SELECT Id,Name,Phone,Email,AccountId,OwnerId,CreatedDate from Contact where Name LIKE '%Singh%'";
+  var records = [],res;  
+    conn.query(query1, function(err, result) {
+      if (err) { return console.error('err in query retrival: '+ err); }
+      res = result;
+      console.log("total : " + result.totalSize);
+      console.log("fetched : " + result.records.length);
+      console.log("done ? : " + result.done);
+      if (!result.done) {
+        // you can use the locator to fetch next records set.
+        // Connection#queryMore()
+        console.log("next records URL : " + result.nextRecordsUrl);
+      }
+    });
+    res.json({msg: 'fnGetSFContacts called!',records:res.records
+    ,totalSize:res.totalSize});
+}
+
+app.get('/salesforceLogin', fnSalesforceLogin);
+app.get('/getSFContacts', fnGetSFContacts);
 
 app.get('/', function (req, res) {
   res.json({Message: "Server is running successfully!"})
@@ -93,20 +115,20 @@ app.post('/dfLocally', function (req, res, next) {
     res.json(resData);
 });
 
-app.post('/df', function (req, res, next) {
-  let resData = { msg: 'df endpoint',
-      reqData: req.body
-    }
-    console.log('resData ',JSON.stringify((resData)));
-    console.log('req headers: ' + JSON.stringify(req.headers));
-    console.log('req body: ' + JSON.stringify(req.body));    
-    // axios.post('http://172.20.3.205:5000/dfLocally', req.body)
-    // .then(res => {
-    //     console.log('axios.post fetch res',res.data);
-    // })
-    // .catch(error => console.error('Error in axios.post fetch:', error));          
-    res.json(resData);
-});
+// app.post('/df', function (req, res, next) {
+//   let resData = { msg: 'df endpoint',
+//       reqData: req.body
+//     }
+//     console.log('resData ',JSON.stringify((resData)));
+//     console.log('req headers: ' + JSON.stringify(req.headers));
+//     console.log('req body: ' + JSON.stringify(req.body));    
+//     // axios.post('http://172.20.3.205:5000/dfLocally', req.body)
+//     // .then(res => {
+//     //     console.log('axios.post fetch res',res.data);
+//     // })
+//     // .catch(error => console.error('Error in axios.post fetch:', error));          
+//     res.json(resData);
+// });
 
 const dialogflowFirebaseFulfillment = functions.https.onRequest((request, response) => {
   const agent = new WebhookClient({ request, response });
@@ -133,7 +155,7 @@ const dialogflowFirebaseFulfillment = functions.https.onRequest((request, respon
   agent.handleRequest(intentMap);
 });
 
-//app.post('/df', dialogflowFirebaseFulfillment);
+app.post('/df', dialogflowFirebaseFulfillment);
 
 /**
  * Send a query to the dialogflow agent, and return the query result.
