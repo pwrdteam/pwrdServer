@@ -4,6 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser  = require('body-parser');
 const jsforce = require('jsforce');
+const axios = require('axios');
 const app = express();
 
 const sessionId = uuid.v4,
@@ -74,9 +75,17 @@ app.post('/sendMsg',(req,res)=>{
 })
 
 app.post('/cors', function (req, res, next) {
-    res.json({msg: 'This is CORS-enabled for all origins!',
-    data: req.body
-  });
+  res.json({msg: 'This is CORS-enabled for all origins!',
+  data: req.body
+});
+});
+
+app.post('/dfLocally', function (req, res, next) {
+  let resData = { msg: 'dfLocally called.',
+      reqData: req.body
+    }
+    console.log('dfLocally resData ',resData);
+    res.json(resData);
 });
 
 app.post('/df', function (req, res, next) {
@@ -84,6 +93,13 @@ app.post('/df', function (req, res, next) {
       reqData: req.body
     }
     console.log('resData ',resData);
+    
+    axios.post('http://172.20.3.205:5000/dfLocally', req.body)
+    .then(res => {
+        console.log('axios.post fetch res',res.data);
+    })
+    .catch(error => console.error('Error in axios.post fetch:', error));
+        
     res.json(resData);
 });
 
