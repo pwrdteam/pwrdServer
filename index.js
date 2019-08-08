@@ -1,3 +1,7 @@
+'use strict';
+const functions = require('firebase-functions');
+const { WebhookClient } = require('dialogflow-fulfillment');
+const {Text, Card, Suggestion} = require('dialogflow-fulfillment');
 const dialogflow = require('dialogflow');
 const uuid = require('uuid');
 const express = require('express');
@@ -7,6 +11,7 @@ const jsforce = require('jsforce');
 const axios = require('axios');
 const app = express();
 
+process.env.DEBUG = 'dialogflow:debug'; // enables lib debugging statements
 const sessionId = uuid.v4,
   //username ="pwrd-zg46@force.com",
   username ="pwrdsumit@powerweave.com",
@@ -92,17 +97,43 @@ app.post('/df', function (req, res, next) {
   let resData = { msg: 'df endpoint',
       reqData: req.body
     }
-    console.log('resData ',resData);
-    
-    axios.post('http://172.20.3.205:5000/dfLocally', req.body)
-    .then(res => {
-        console.log('axios.post fetch res',res.data);
-    })
-    .catch(error => console.error('Error in axios.post fetch:', error));
-        
+    console.log('resData ',JSON.stringify((resData)));
+    console.log('req headers: ' + JSON.stringify(req.headers));
+    console.log('req body: ' + JSON.stringify(req.body));    
+    // axios.post('http://172.20.3.205:5000/dfLocally', req.body)
+    // .then(res => {
+    //     console.log('axios.post fetch res',res.data);
+    // })
+    // .catch(error => console.error('Error in axios.post fetch:', error));          
     res.json(resData);
 });
 
+const dialogflowFirebaseFulfillment = functions.https.onRequest((request, response) => {
+  const agent = new WebhookClient({ request, response });
+  console.log('Dialogflow Request headers: ' + JSON.stringify(request.headers));
+  console.log('Dialogflow Request body: ' + JSON.stringify(request.body));
+
+  function welcome(agent) {
+    agent.add(`Welcome to my agent!`);
+  }
+
+  function fallback(agent) {
+    agent.add(`I didn't understand`);
+    agent.add(`I'm sorry, can you try again?`);
+  }
+  
+  function fnGetSFContacts(agent) {
+    agent.add(`I'm from Salesforce.`);
+    agent.add(`Happy to help you.`);
+  }
+
+  let intentMap = new Map();
+  //intentMap.set('Default Welcome Intent', welcome);
+  intentMap.set('getSFContacts', fnGetSFContacts);
+  agent.handleRequest(intentMap);
+});
+
+//app.post('/df', dialogflowFirebaseFulfillment);
 
 /**
  * Send a query to the dialogflow agent, and return the query result.
