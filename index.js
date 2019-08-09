@@ -164,8 +164,8 @@ const dialogflowFirebaseFulfillment = functions.https.onRequest((request, respon
   
   async function fnGetSFContacts(agent) {
     const [fName, lName] = [agent.parameters['given-name'],agent.parameters['last-name']];    
-    let BaseUrl = "https://blooming-oasis-83185.herokuapp.com";
-    //let BaseUrl = "http://172.20.4.123:5000";
+    //let BaseUrl = "https://blooming-oasis-83185.herokuapp.com";
+    let BaseUrl = "http://172.20.4.123:5000";
     let Url = `${BaseUrl}/getSFContacts`,
     getName = !fName?lName:!lName?fName:!fName && !lName?'':`${fName} ${lName}`,
     reqData = {
