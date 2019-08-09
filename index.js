@@ -2,6 +2,20 @@
 const functions = require('firebase-functions');
 const { WebhookClient } = require('dialogflow-fulfillment');
 const {Text, Card, Suggestion} = require('dialogflow-fulfillment');
+const {
+  //dialogflow,
+  BasicCard,
+  BrowseCarousel,
+  BrowseCarouselItem,
+  Button,
+  Carousel,
+  Image,
+  LinkOutSuggestion,
+  List,
+  MediaObject,
+  Suggestions,
+  SimpleResponse,
+ } = require('actions-on-google');
 const dialogflow = require('dialogflow');
 const uuid = require('uuid');
 const express = require('express');
@@ -42,12 +56,13 @@ var conn = new jsforce.Connection({
     accessToken: SecurityToken
 });
 
-const fnSalesforceLogin = (req, res) => {
-  conn.login(username, password, function(err, userInfo) {
-    if (err) { console.error(err);
-      return res.json({msg: `salesforceLogin Unsuccessfully!`,
-      username:username,password:password});
+//const fuSFLogin = () => {  }
+  const  fnSFLogin = conn.login(username, password, function(err, userInfo) {
+    if (err) { console.error('salesforce Login Failed:'+ err);
+      return JSON.stringify({msg: `salesforce Login Failed!`,
+      username:username, password:password});
     }
+    debugger;
     // Now you can get the access token and instance URL information.
     // Save them to establish connection next time.
     console.log('conn.accessToken',conn.accessToken);
@@ -55,33 +70,36 @@ const fnSalesforceLogin = (req, res) => {
     // logged in user property
     console.log("User ID: " + userInfo.id);
     console.log("Org ID: " + userInfo.organizationId);
-    res.json({msg: 'salesforceLogin Successfully!',accessToken:conn.accessToken
+    return JSON.stringify({msg: 'salesforceLogin Successfully!',accessToken:conn.accessToken
     ,instanceUrl:conn.instanceUrl,User_ID:userInfo.id,Org_ID:userInfo.organizationId});
-  });  
-//res.json({msg: 'salesforce Login  Failed!',username:username,password:password});
+  });
+
+const fnSalesforceLogin = (req, res) => {
+  let LoginResult = fnSFLogin;
+  console.log('LoginResult: ' +JSON.stringify(LoginResult));
+  res.json(LoginResult);
 }
 
-const fnGetSFContacts = (req, res) => {
-  var query1 = "SELECT Id,Name,Phone,Email,AccountId,OwnerId,CreatedDate from Contact where Name LIKE '%Singh%'";
-  var records = [],res;  
-    conn.query(query1, function(err, result) {
+app.post('/getSFContacts', (req, res) => {
+  //var query = "SELECT Id,Name,Phone,Email,AccountId,OwnerId,CreatedDate from Contact where Name LIKE '%Singh%'";
+  let query = req.body.query;
+  conn.query(query, function(err, result) {
       if (err) { return console.error('err in query retrival: '+ err); }
-      res = result;
       console.log("total : " + result.totalSize);
       console.log("fetched : " + result.records.length);
-      console.log("done ? : " + result.done);
       if (!result.done) {
         // you can use the locator to fetch next records set.
         // Connection#queryMore()
         console.log("next records URL : " + result.nextRecordsUrl);
       }
+      res.json({msg: 'fnGetSFContacts called!',totalSize:result.totalSize,
+        records:result.records
+      });
     });
-    res.json({msg: 'fnGetSFContacts called!',records:res.records
-    ,totalSize:res.totalSize});
-}
+});
 
 app.get('/salesforceLogin', fnSalesforceLogin);
-app.get('/getSFContacts', fnGetSFContacts);
+//app.get('/getSFContacts', fnGetSFContacts);
 
 app.get('/', function (req, res) {
   res.json({Message: "Server is running successfully!"})
@@ -144,9 +162,45 @@ const dialogflowFirebaseFulfillment = functions.https.onRequest((request, respon
     agent.add(`I'm sorry, can you try again?`);
   }
   
-  function fnGetSFContacts(agent) {
-    agent.add(`I'm from Salesforce.`);
-    agent.add(`Happy to help you.`);
+  async function fnGetSFContacts(agent) {
+    const [fName, lName] = [agent.parameters['given-name'],agent.parameters['last-name']];    
+    let BaseUrl = "https://blooming-oasis-83185.herokuapp.com";
+    //let BaseUrl = "http://172.20.4.123:5000";
+    let Url = `${BaseUrl}/getSFContacts`,
+    getName = !fName?lName:!lName?fName:!fName && !lName?'':`${fName} ${lName}`,
+    reqData = {
+      query: `SELECT Name,Phone,Email from Contact where Name LIKE '%${getName}%'`
+    },
+    agentData=[];
+
+    await axios.post(Url, reqData)
+      .then((res) => {
+          //console.log('axios.post res',res.data);
+          let responseText='';
+          agent.add(`I'm from Salesforce.`);
+          responseText = (res.data.records.length > 0) 
+            ? new Text(JSON.stringify(res.data.records)) 
+            : "Records are not available.";
+          agent.add(responseText);
+          agent.add(`Happy to help you.`);
+
+          // res.data.records.filter((el)=> {
+          //   let elData='';
+          //   delete el.attributes;
+          //   for (var k in el) {
+          //     if (el.hasOwnProperty(k)) {
+          //        elData += `${k}: ${el[k]}, `;
+          //     }
+          //   }
+          //   elData = elData.substr(0,elData.length-2);
+          //   agentData.push(elData);
+          // });
+          // agent.add(agentData);
+      })
+      .catch((err) => {
+          console.log('axios.post err',err);
+          agent.add("Internal Server Error");
+      });
   }
 
   let intentMap = new Map();
