@@ -2,20 +2,6 @@
 const functions = require('firebase-functions');
 const { WebhookClient } = require('dialogflow-fulfillment');
 const {Text, Card, Suggestion} = require('dialogflow-fulfillment');
-const {
-  //dialogflow,
-  BasicCard,
-  BrowseCarousel,
-  BrowseCarouselItem,
-  Button,
-  Carousel,
-  Image,
-  LinkOutSuggestion,
-  List,
-  MediaObject,
-  Suggestions,
-  SimpleResponse,
- } = require('actions-on-google');
 const dialogflow = require('dialogflow');
 const uuid = require('uuid');
 const express = require('express');
@@ -133,21 +119,6 @@ app.post('/dfLocally', function (req, res, next) {
     res.json(resData);
 });
 
-// app.post('/df', function (req, res, next) {
-//   let resData = { msg: 'df endpoint',
-//       reqData: req.body
-//     }
-//     console.log('resData ',JSON.stringify((resData)));
-//     console.log('req headers: ' + JSON.stringify(req.headers));
-//     console.log('req body: ' + JSON.stringify(req.body));    
-//     // axios.post('http://172.20.3.205:5000/dfLocally', req.body)
-//     // .then(res => {
-//     //     console.log('axios.post fetch res',res.data);
-//     // })
-//     // .catch(error => console.error('Error in axios.post fetch:', error));          
-//     res.json(resData);
-// });
-
 const dialogflowFirebaseFulfillment = functions.https.onRequest((request, response) => {
   const agent = new WebhookClient({ request, response });
   console.log('Dialogflow Request headers: ' + JSON.stringify(request.headers));
@@ -163,13 +134,12 @@ const dialogflowFirebaseFulfillment = functions.https.onRequest((request, respon
   }
   
   async function fnGetSFContacts(agent) {
-    const [fName, lName] = [agent.parameters['given-name'],agent.parameters['last-name']];    
-    //let BaseUrl = "https://blooming-oasis-83185.herokuapp.com";
-    let BaseUrl = "http://172.20.4.123:5000";
+    const [Name] = [agent.parameters['SFContactsNames']];    
+    let BaseUrl = "https://blooming-oasis-83185.herokuapp.com";
+    //let BaseUrl = "http://172.20.4.123:5000";
     let Url = `${BaseUrl}/getSFContacts`,
-    getName = !fName?lName:!lName?fName:!fName && !lName?'':`${fName} ${lName}`,
     reqData = {
-      query: `SELECT Name,Phone,Email from Contact where Name LIKE '%${getName}%'`
+      query: `SELECT Name,Phone,Email from Contact where Name LIKE '%${Name}%'`
     },
     agentData=[];
 
@@ -179,7 +149,7 @@ const dialogflowFirebaseFulfillment = functions.https.onRequest((request, respon
           let responseText='';
           agent.add(`I'm from Salesforce.`);
           responseText = (res.data.records.length > 0) 
-            ? new Text(JSON.stringify(res.data.records)) 
+            ? new Text(JSON.stringify(res.data.records))
             : "Records are not available.";
           agent.add(responseText);
           agent.add(`Happy to help you.`);
