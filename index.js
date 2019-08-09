@@ -19,7 +19,7 @@ const sessionId = uuid.v4,
   ConsumerKey = "3MVG9G9pzCUSkzZthsJ3o.DCpCyp3y5Ylr0Z9vr7MM8d.OQ7KfRGn6OkC2Ikcmm4b2PmtdyxbjgQBFUdVuytN",
   ConsumerSecret = "ACE5D3C6427268B9FB8829F1E41CBECD70CB575E3BAC2CF7782D69B2F508F40A",
   CallbackURL = "https://ap15.salesforce.com//oauth2/callback",
-  password = "power123TszDHeS5nuvfDlli3I6RU7mY";  
+  password = "power123TszDHeS5nuvfDlli3I6RU7mY";
   
 
 app.use(cors());
