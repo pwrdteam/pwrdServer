@@ -128,8 +128,8 @@ const dialogflowFirebaseFulfillment = functions.https.onRequest((request, respon
   console.log('Dialogflow Request headers: ' + JSON.stringify(request.headers));
   console.log('Dialogflow Request body: ' + JSON.stringify(request.body));
   
-  //let BaseUrl = "https://blooming-oasis-83185.herokuapp.com";
-  let BaseUrl = "http://127.0.0.1:5000";
+  let BaseUrl = "https://blooming-oasis-83185.herokuapp.com";
+  //let BaseUrl = "http://127.0.0.1:5000";
   let Url = `${BaseUrl}/getSFDetails`;
   let queryText = '';
 
