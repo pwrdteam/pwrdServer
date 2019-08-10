@@ -2,7 +2,8 @@
 const functions = require('firebase-functions');
 const { WebhookClient } = require('dialogflow-fulfillment');
 const {Text, Card, Suggestion} = require('dialogflow-fulfillment');
-const dialogflow = require('dialogflow');
+const { dialogflow } = require('actions-on-google');
+//const dialogflow = require('dialogflow');
 const uuid = require('uuid');
 const express = require('express');
 const cors = require('cors');
@@ -48,7 +49,6 @@ var conn = new jsforce.Connection({
       return JSON.stringify({msg: `salesforce Login Failed!`,
       username:username, password:password});
     }
-    debugger;
     // Now you can get the access token and instance URL information.
     // Save them to establish connection next time.
     console.log('conn.accessToken',conn.accessToken);
@@ -66,18 +66,22 @@ const fnSalesforceLogin = (req, res) => {
   res.json(LoginResult);
 }
 
-app.post('/getSFContacts', (req, res) => {
+app.post('/getSFDetails', (req, res) => {
   //var query = "SELECT Id,Name,Phone,Email,AccountId,OwnerId,CreatedDate from Contact where Name LIKE '%Singh%'";
+  //var query = "select Count(Id) from Contact where Title LIKE '%SVP%'";
+  //var query = "Select NumberofLocations__c from Account where Name LIKE '%Gas%'";
   let query = req.body.query;
   conn.query(query, function(err, result) {
-      if (err) { return console.error('err in query retrival: '+ err); }
+      if (err) {  console.error('err in query retrival: '+ err);      
+      return res.json({msg: 'fnGetSFContacts called!',err:err });
+     }
       console.log("total : " + result.totalSize);
       console.log("fetched : " + result.records.length);
-      if (!result.done) {
-        // you can use the locator to fetch next records set.
-        // Connection#queryMore()
-        console.log("next records URL : " + result.nextRecordsUrl);
-      }
+      // if (!result.done) {
+      //   // you can use the locator to fetch next records set.
+      //   // Connection#queryMore()
+      //   console.log("next records URL : " + result.nextRecordsUrl);
+      // }
       res.json({msg: 'fnGetSFContacts called!',totalSize:result.totalSize,
         records:result.records
       });
@@ -123,6 +127,11 @@ const dialogflowFirebaseFulfillment = functions.https.onRequest((request, respon
   const agent = new WebhookClient({ request, response });
   console.log('Dialogflow Request headers: ' + JSON.stringify(request.headers));
   console.log('Dialogflow Request body: ' + JSON.stringify(request.body));
+  
+  //let BaseUrl = "https://blooming-oasis-83185.herokuapp.com";
+  let BaseUrl = "http://127.0.0.1:5000";
+  let Url = `${BaseUrl}/getSFDetails`;
+  let queryText = '';
 
   function welcome(agent) {
     agent.add(`Welcome to my agent!`);
@@ -134,38 +143,54 @@ const dialogflowFirebaseFulfillment = functions.https.onRequest((request, respon
   }
   
   async function fnGetSFContacts(agent) {
-    const [Name] = [agent.parameters['SFContactsNames']];    
-    let BaseUrl = "https://blooming-oasis-83185.herokuapp.com";
-    //let BaseUrl = "http://172.20.4.123:5000";
-    let Url = `${BaseUrl}/getSFContacts`,
-    reqData = {
-      query: `SELECT Name,Phone,Email from Contact where Name LIKE '%${Name}%'`
-    },
-    agentData=[];
+    const [Title,Name] = [agent.parameters['SFContactsTitle'],agent.parameters['SFContactsNames']];    
+    if (!Title) {
+      queryText = `SELECT Name,Phone,Email from Contact Where Name LIKE '%${Name}%'`;
+    }
+    else{
+      queryText = `SELECT Count(Id) Total from Contact Where Title LIKE '%${Title}%'`;
+    }
+    let reqData = { query: queryText};
 
     await axios.post(Url, reqData)
       .then((res) => {
           //console.log('axios.post res',res.data);
           let responseText='';
           agent.add(`I'm from Salesforce.`);
-          responseText = (res.data.records.length > 0) 
-            ? new Text(JSON.stringify(res.data.records))
-            : "Records are not available.";
+          responseText = (res.data.hasOwnProperty("records") && res.data.records.length > 0) 
+            ? new Text(JSON.stringify(res.data.records)): (res.data.hasOwnProperty("err"))
+            ?"Something went wrong, Try Later!":"Records are not available.";
           agent.add(responseText);
           agent.add(`Happy to help you.`);
+      })
+      .catch((err) => {
+          console.log('axios.post err',err);
+          agent.add("Internal Server Error");
+      });
+  }
 
-          // res.data.records.filter((el)=> {
-          //   let elData='';
-          //   delete el.attributes;
-          //   for (var k in el) {
-          //     if (el.hasOwnProperty(k)) {
-          //        elData += `${k}: ${el[k]}, `;
-          //     }
-          //   }
-          //   elData = elData.substr(0,elData.length-2);
-          //   agentData.push(elData);
-          // });
-          // agent.add(agentData);
+  async function fnGetSFAccounts(agent) {
+    const [Name,Column] = [agent.parameters['SFAccountName'],agent.parameters['SFAccountColumn']];    
+    let conv = agent.conv(),allColumns='';
+    if (!!Name && !!Column) {      
+      Column.forEach((value, index, array)=>{
+        allColumns += value + ', ';
+      });
+      allColumns = allColumns.substr(0,allColumns.length-2);      
+      queryText = `SELECT ${allColumns} from Account Where Name LIKE '%${Name}%'`;
+    }
+    let reqData = { query: queryText};
+
+    await axios.post(Url, reqData)
+      .then((res) => {
+          //console.log('axios.post res',res.data);
+          let responseText='';
+          agent.add(`I'm from Salesforce.`);
+          responseText = (res.data.hasOwnProperty("records") && res.data.records.length > 0) 
+            ? new Text(JSON.stringify(res.data.records)): (res.data.hasOwnProperty("err"))
+            ?"Something went wrong, Try Later!":"Records are not available.";
+          agent.add(responseText);
+          agent.add(`Happy to help you.`);
       })
       .catch((err) => {
           console.log('axios.post err',err);
@@ -176,55 +201,71 @@ const dialogflowFirebaseFulfillment = functions.https.onRequest((request, respon
   let intentMap = new Map();
   //intentMap.set('Default Welcome Intent', welcome);
   intentMap.set('getSFContacts', fnGetSFContacts);
-  agent.handleRequest(intentMap);
+  intentMap.set('getSFAccount', fnGetSFAccounts);
+  agent.handleRequest(intentMap);  
 });
 
 app.post('/df', dialogflowFirebaseFulfillment);
+
+/*https://developers.google.com/actions/dialogflow/fulfillment#initialize_the_dialogflowapp_object
+  // const app = dialogflow();
+  // app.intent('getSFAccount', (conv) => {
+  // conv.ask('Welcome to number echo! Say a number.');
+  // });
+  // app.intent('Input Number', (conv, {num}) => {
+  // // extract the num parameter as a local string variable
+  // conv.close(`You said ${num}`);
+  // });
+*/
 
 /**
  * Send a query to the dialogflow agent, and return the query result.
  * @param {string} projectId The project to be used
  */
-async function runSample(msg,projectId = 'demolt-uhyhbh') {
-  // A unique identifier for the given session
-  const sessionId = uuid.v4();
-  debugger;
 
-  // Create a new session
-  const sessionClient = new dialogflow.SessionsClient({
-      keyFilename: "C:/Users/sumit.singh/Documents/Work/PoC/PixelOfImage/Works/Javascript/Node/New folder/tcsdemo/Server/demolt-6eaffb522ebe.json"
-  });
-  const sessionPath = sessionClient.sessionPath(projectId, sessionId);
+
+// async function runSample(msg,projectId = 'demolt-uhyhbh') {
+//   // A unique identifier for the given session
+//   const sessionId = uuid.v4();
+//   debugger;
+
+//   // Create a new session
+//   /*Uncomment this 
+//   const dialogflow = require('dialogflow');*/
+//   const sessionClient = new dialogflow.SessionsClient({
+//       keyFilename: "C:/Users/sumit.singh/Documents/Work/PoC/PixelOfImage/Works/Javascript/Node/New folder/tcsdemo/Server/demolt-6eaffb522ebe.json"
+//   });
+//   const sessionPath = sessionClient.sessionPath(projectId, sessionId);
  
-  // The text query request.
-  const request = {
-    session: sessionPath,
-    queryInput: {
-      text: {
-        // The query to send to the dialogflow agent
-        text: (msg)?msg:'hello',
-        // The language used by the client (en-US)
-        languageCode: 'en-US',
-      },
-    },
-  };
+//   // The text query request.
+//   const request = {
+//     session: sessionPath,
+//     queryInput: {
+//       text: {
+//         // The query to send to the dialogflow agent
+//         text: (msg)?msg:'hello',
+//         // The language used by the client (en-US)
+//         languageCode: 'en-US',
+//       },
+//     },
+//   };
  
-  // Send request and log result
-  const responses = await sessionClient.detectIntent(request);
-  //console.log('Detected intent');
-  const result = responses[0].queryResult;
-  let responseMsg = result.fulfillmentText;
-  //console.log(`Query: ${result.queryText}`);
-  console.log(`Response: ${result.fulfillmentText}`);
-  if (result.intent.displayName === "Salesforce") {
-    responseMsg = "It Works";
-  }else if (result.intent) {
-    //console.log(`Intent: ${result.intent.displayName}`);
-  }  else {
-    //console.log(`No intent matched.`);
-  }
-  return responseMsg;
-}
+//   // Send request and log result
+//   const responses = await sessionClient.detectIntent(request);
+//   //console.log('Detected intent');
+//   const result = responses[0].queryResult;
+//   let responseMsg = result.fulfillmentText;
+//   //console.log(`Query: ${result.queryText}`);
+//   console.log(`Response: ${result.fulfillmentText}`);
+//   if (result.intent.displayName === "Salesforce") {
+//     responseMsg = "It Works";
+//   }else if (result.intent) {
+//     //console.log(`Intent: ${result.intent.displayName}`);
+//   }  else {
+//     //console.log(`No intent matched.`);
+//   }
+//   return responseMsg;
+// }
 
 const port = process.env.PORT || 5000;
 app.listen(port, () => {
