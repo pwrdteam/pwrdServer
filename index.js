@@ -131,7 +131,7 @@ const dialogflowFirebaseFulfillment = functions.https.onRequest((request, respon
   let BaseUrl = "https://blooming-oasis-83185.herokuapp.com";
   //let BaseUrl = "http://127.0.0.1:5000";
   let Url = `${BaseUrl}/getSFDetails`;
-  let queryText = '';
+  let queryText = '', allColumns='', reqData;
 
   function welcome(agent) {
     agent.add(`Welcome to my agent!`);
@@ -143,14 +143,16 @@ const dialogflowFirebaseFulfillment = functions.https.onRequest((request, respon
   }
   
   async function fnGetSFContacts(agent) {
-    const [Title,Name] = [agent.parameters['SFContactsTitle'],agent.parameters['SFContactsNames']];    
-    if (!Title) {
-      queryText = `SELECT Name,Phone,Email from Contact Where Name LIKE '%${Name}%'`;
+    const [Name,Column] = [agent.parameters['SFContactsNames'],agent.parameters['SFContactsColumn']];        
+    let conv = agent.conv();
+    if (!!Name && !!Column) {      
+      Column.forEach((value, index, array)=>{
+        allColumns += value + ', ';
+      });
+      allColumns = allColumns.substr(0,allColumns.length-2);      
+      queryText = `SELECT ${allColumns} from Contact Where Name LIKE '%${Name==='All'?'':Name}%'`;
     }
-    else{
-      queryText = `SELECT Count(Id) Total from Contact Where Title LIKE '%${Title}%'`;
-    }
-    let reqData = { query: queryText};
+    reqData = { query: queryText};
 
     await axios.post(Url, reqData)
       .then((res) => {
@@ -170,16 +172,67 @@ const dialogflowFirebaseFulfillment = functions.https.onRequest((request, respon
   }
 
   async function fnGetSFAccounts(agent) {
-    const [Name,Column] = [agent.parameters['SFAccountName'],agent.parameters['SFAccountColumn']];    
-    let conv = agent.conv(),allColumns='';
+    const [Name,Column] = [agent.parameters['SFAccountName'],agent.parameters['SFAccountColumn']];
     if (!!Name && !!Column) {      
       Column.forEach((value, index, array)=>{
         allColumns += value + ', ';
       });
       allColumns = allColumns.substr(0,allColumns.length-2);      
-      queryText = `SELECT ${allColumns} from Account Where Name LIKE '%${Name}%'`;
+      queryText = `SELECT ${allColumns} from Account Where Name LIKE '%${Name==='All'?'':Name}%'`;
     }
-    let reqData = { query: queryText};
+    reqData = { query: queryText};
+
+    await axios.post(Url, reqData)
+      .then((res) => {
+          //console.log('axios.post res',res.data);
+          let responseText='';
+          agent.add(`I'm from Salesforce.`);
+          responseText = (res.data.hasOwnProperty("records") && res.data.records.length > 0) 
+            ? new Text(JSON.stringify(res.data.records)): (res.data.hasOwnProperty("err"))
+            ?"Something went wrong, Try Later!":"Records are not available.";
+          agent.add(responseText);
+          agent.add(`Happy to help you.`);
+      })
+      .catch((err) => {
+          console.log('axios.post err',err);
+          agent.add("Internal Server Error");
+      });
+  }
+  
+  async function fnGetSFOpportunity(agent) {
+    const [Name,Column] = [agent.parameters['SFOpportunityName'],agent.parameters['SFOpportunityColumn']];
+    if (!!Name && !!Column) {      
+      Column.forEach((value, index, array)=>{
+        allColumns += value + ', ';
+      });
+      allColumns = allColumns.substr(0,allColumns.length-2);      
+      queryText = `SELECT ${allColumns} from Opportunity Where Name LIKE '%${Name==='All'?'':Name}%'`;
+    }
+    reqData = { query: queryText};
+
+    await axios.post(Url, reqData)
+      .then((res) => {
+          //console.log('axios.post res',res.data);
+          let responseText='';
+          agent.add(`I'm from Salesforce.`);
+          responseText = (res.data.hasOwnProperty("records") && res.data.records.length > 0) 
+            ? new Text(JSON.stringify(res.data.records)): (res.data.hasOwnProperty("err"))
+            ?"Something went wrong, Try Later!":"Records are not available.";
+          agent.add(responseText);
+          agent.add(`Happy to help you.`);
+      })
+      .catch((err) => {
+          console.log('axios.post err',err);
+          agent.add("Internal Server Error");
+      });
+  }
+
+  async function fnGetSFContactTitleCount(agent) {
+    const [Title] = [agent.parameters['SFContactsTitle']];
+    if (!!Title) {    
+      queryText = `SELECT Count(Id) Total_Count from Contact Where Title LIKE '%${Title}%'`;
+    }
+    reqData = { query: queryText};
 
     await axios.post(Url, reqData)
       .then((res) => {
@@ -202,6 +255,8 @@ const dialogflowFirebaseFulfillment = functions.https.onRequest((request, respon
   //intentMap.set('Default Welcome Intent', welcome);
   intentMap.set('getSFContacts', fnGetSFContacts);
   intentMap.set('getSFAccount', fnGetSFAccounts);
+  intentMap.set('getSFOpportunity', fnGetSFOpportunity);
+  intentMap.set('getSFContactTitleCount', fnGetSFContactTitleCount);
   agent.handleRequest(intentMap);  
 });
 
