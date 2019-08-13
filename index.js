@@ -158,7 +158,7 @@ const dialogflowFirebaseFulfillment = functions.https.onRequest((request, respon
       .then((res) => {
           //console.log('axios.post res',res.data);
           let responseText='';
-          agent.add(`I'm from Salesforce.`);
+          //agent.add(`I'm from Salesforce.`);
           responseText = (res.data.hasOwnProperty("records") && res.data.records.length > 0) 
             ? new Text(JSON.stringify(res.data.records)): (res.data.hasOwnProperty("err"))
             ?"Something went wrong, Try Later!":"Records are not available.";
@@ -186,7 +186,7 @@ const dialogflowFirebaseFulfillment = functions.https.onRequest((request, respon
       .then((res) => {
           //console.log('axios.post res',res.data);
           let responseText='';
-          agent.add(`I'm from Salesforce.`);
+          //agent.add(`I'm from Salesforce.`);
           responseText = (res.data.hasOwnProperty("records") && res.data.records.length > 0) 
             ? new Text(JSON.stringify(res.data.records)): (res.data.hasOwnProperty("err"))
             ?"Something went wrong, Try Later!":"Records are not available.";
@@ -214,7 +214,7 @@ const dialogflowFirebaseFulfillment = functions.https.onRequest((request, respon
       .then((res) => {
           //console.log('axios.post res',res.data);
           let responseText='';
-          agent.add(`I'm from Salesforce.`);
+          //agent.add(`I'm from Salesforce.`);
           responseText = (res.data.hasOwnProperty("records") && res.data.records.length > 0) 
             ? new Text(JSON.stringify(res.data.records)): (res.data.hasOwnProperty("err"))
             ?"Something went wrong, Try Later!":"Records are not available.";
