@@ -163,7 +163,7 @@ const dialogflowFirebaseFulfillment = functions.https.onRequest((request, respon
             ? new Text(JSON.stringify(res.data.records)): (res.data.hasOwnProperty("err"))
             ?"Something went wrong, Try Later!":"Records are not available.";
           agent.add(responseText);
-          //agent.add(`Happy to help you.`);
+          agent.add(`Happy to help you.`);
       })
       .catch((err) => {
           console.log('axios.post err',err);
@@ -191,7 +191,7 @@ const dialogflowFirebaseFulfillment = functions.https.onRequest((request, respon
             ? new Text(JSON.stringify(res.data.records)): (res.data.hasOwnProperty("err"))
             ?"Something went wrong, Try Later!":"Records are not available.";
           agent.add(responseText);
-          //agent.add(`Happy to help you.`);
+          agent.add(`Happy to help you.`);
       })
       .catch((err) => {
           console.log('axios.post err',err);
@@ -219,7 +219,7 @@ const dialogflowFirebaseFulfillment = functions.https.onRequest((request, respon
             ? new Text(JSON.stringify(res.data.records)): (res.data.hasOwnProperty("err"))
             ?"Something went wrong, Try Later!":"Records are not available.";
           agent.add(responseText);
-          //agent.add(`Happy to help you.`);
+          agent.add(`Happy to help you.`);
       })
       .catch((err) => {
           console.log('axios.post err',err);
@@ -243,7 +243,7 @@ const dialogflowFirebaseFulfillment = functions.https.onRequest((request, respon
             ? new Text(JSON.stringify(res.data.records)): (res.data.hasOwnProperty("err"))
             ?"Something went wrong, Try Later!":"Records are not available.";
           agent.add(responseText);
-          //agent.add(`Happy to help you.`);
+          agent.add(`Happy to help you.`);
       })
       .catch((err) => {
           console.log('axios.post err',err);
