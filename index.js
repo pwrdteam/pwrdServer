@@ -262,6 +262,64 @@ const dialogflowFirebaseFulfillment = functions.https.onRequest((request, respon
 
 app.post('/df', dialogflowFirebaseFulfillment);
 
+
+
+const dialogflowAutoImarery = functions.https.onRequest((request, response) => {
+  const agent = new WebhookClient({ request, response });
+  console.log('Dialogflow Request headers: ' + JSON.stringify(request.headers));
+  console.log('Dialogflow Request body: ' + JSON.stringify(request.body));
+  
+  let BaseUrl = "https://blooming-oasis-83185.herokuapp.com";
+  //let BaseUrl = "http://127.0.0.1:5000";
+  let Url = `${BaseUrl}/getSFDetails`;
+  let queryText = '', allColumns='', reqData;
+
+  function welcome(agent) {
+    agent.add(`Welcome to my agent!`);
+  }
+
+  function fallback(agent) {
+    agent.add(`I didn't understand`);
+    agent.add(`I'm sorry, can you try again?`);
+  }
+  
+  async function fnCreateBanner(agent) {
+    const [products,type,background] = [agent.parameters['products'],agent.parameters['type'],agent.parameters['background']];        
+    let conv = agent.conv();
+    if (!!background && !!type && products.length !=0) {
+
+    }
+    if(type.toLowerCase() == "web"){
+    	if(products.length >= 2){
+          	agent.add(`It works.`);
+			      agent.add(`You have added the data correctly.`); 
+          	agent.add(`Your ${type} banner with ${background} background image having ${products[0]} and ${products[1]} as the product images is ready.`);          	 
+        }
+      else{
+      	agent.add(`Please specify two products for your web banner`);
+      }      
+    }
+    else if(type.toLowerCase() == "ad"){
+      if(products.length >= 1){
+        agent.add(`It works.`);
+        agent.add(`You have added the data correctly.`);
+        agent.add(`Your ${type} banner with ${background} background having ${products[0]}  as the product image is ready.`);
+      }
+      else{
+        agent.add(`Please specify one product for your ad banner !`);
+      }
+    }
+  }
+
+  let intentMap = new Map();
+  //intentMap.set('Default Welcome Intent', welcome);
+  intentMap.set('createBanner', fnCreateBanner);
+  agent.handleRequest(intentMap);  
+});
+
+app.post('/dfAutoImarery', dialogflowAutoImarery);
+
+
 /*https://developers.google.com/actions/dialogflow/fulfillment#initialize_the_dialogflowapp_object
   // const app = dialogflow();
   // app.intent('getSFAccount', (conv) => {
