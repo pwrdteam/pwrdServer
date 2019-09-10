@@ -269,11 +269,6 @@ const dialogflowAutoImarery = functions.https.onRequest((request, response) => {
   console.log('Dialogflow Request headers: ' + JSON.stringify(request.headers));
   console.log('Dialogflow Request body: ' + JSON.stringify(request.body));
   
-  let BaseUrl = "https://blooming-oasis-83185.herokuapp.com";
-  //let BaseUrl = "http://127.0.0.1:5000";
-  let Url = `${BaseUrl}/getSFDetails`;
-  let queryText = '', allColumns='', reqData;
-
   function welcome(agent) {
     agent.add(`Welcome to my agent!`);
   }
@@ -286,8 +281,8 @@ const dialogflowAutoImarery = functions.https.onRequest((request, response) => {
   async function fnCreateBanner(agent) {
     const [products,type,background] = [agent.parameters['products'],agent.parameters['type'],agent.parameters['background']];        
     let conv = agent.conv();
-    if (!!background && !!type && products.length !=0) {
-
+    if (!!background || !!type || products.length !=0) {
+      let cntxt1 = agent.context.get('projects/saveuserdetails-f5541/agent/sessions/d7749a82-28b5-7ad1-ab24-c83494bd3d10/contexts/createbanner-followup');
     }
     if(type.toLowerCase() == "web"){
     	if(products.length >= 2){
@@ -296,8 +291,36 @@ const dialogflowAutoImarery = functions.https.onRequest((request, response) => {
           	agent.add(`Your ${type} banner with ${background} background image having ${products[0]} and ${products[1]} as the product images is ready.`);          	 
         }
       else{
-      	agent.add(`Please specify two products for your web banner`);
-      }      
+        var context1 = {
+          name: "context1",
+          "lifespanCount": 10,
+          "parameters": {
+            "products": [
+              "ac"
+            ],
+            "type": "web",
+            "background": "green"
+          }
+        };
+        var context2 = {
+          "name": "context2",
+          "lifespanCount": 10,
+          "parameters": {
+            "products": [
+              "ac"
+            ],
+            "type": "web",
+            "background": "green"
+          }
+        };
+        context2['parameters'] = {products,type,background};
+        agent.context.set(context1);
+        agent.context.set(context2);
+        let cxt1 = agent.context.get('context1');
+        let cxt2 = agent.context.get('context2');
+
+      	agent.add(`Please specify two products for your web banner.`);
+      }
     }
     else if(type.toLowerCase() == "ad"){
       if(products.length >= 1){
