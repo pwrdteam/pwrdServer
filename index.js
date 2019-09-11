@@ -283,7 +283,7 @@ const dialogflowAutoImarery = functions.https.onRequest((request, response) => {
     let missingSlots = [];
     if (!type) { missingSlots.push('type'); }
     if (!background) { missingSlots.push('background'); }
-    if (!products) { missingSlots.push('products'); }
+    if (products.length == 0) { missingSlots.push('products'); }
 
     if (missingSlots.length === 1){
       agent.add(`Looks like you didn't provide the banner ${missingSlots[0]}.`);
