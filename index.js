@@ -266,8 +266,8 @@ app.post('/df', dialogflowFirebaseFulfillment);
 
 const dialogflowAutoImarery = functions.https.onRequest((request, response) => {
   const agent = new WebhookClient({ request, response });
-  console.log('Dialogflow Request headers: ' + JSON.stringify(request.headers));
-  console.log('Dialogflow Request body: ' + JSON.stringify(request.body));
+  // console.log('dialogflowAutoImarery Request headers: ' + JSON.stringify(request.headers));
+  // console.log('dialogflowAutoImarery Request body: ' + JSON.stringify(request.body));
   
   function welcome(agent) {
     agent.add(`Welcome to my agent!`);
@@ -279,59 +279,55 @@ const dialogflowAutoImarery = functions.https.onRequest((request, response) => {
   }
   
   async function fnCreateBanner(agent) {
-    const [products,type,background] = [agent.parameters['products'],agent.parameters['type'],agent.parameters['background']];        
-    let conv = agent.conv();
-    if (!!background || !!type || products.length !=0) {
-      let cntxt1 = agent.context.get('projects/saveuserdetails-f5541/agent/sessions/d7749a82-28b5-7ad1-ab24-c83494bd3d10/contexts/createbanner-followup');
-    }
-    if(type.toLowerCase() == "web"){
-    	if(products.length >= 2){
-          	agent.add(`It works.`);
-			      agent.add(`You have added the data correctly.`); 
-          	agent.add(`Your ${type} banner with ${background} background image having ${products[0]} and ${products[1]} as the product images is ready.`);          	 
-        }
-      else{
-        var context1 = {
-          name: "context1",
-          "lifespanCount": 10,
-          "parameters": {
-            "products": [
-              "ac"
-            ],
-            "type": "web",
-            "background": "green"
-          }
-        };
-        var context2 = {
-          "name": "context2",
-          "lifespanCount": 10,
-          "parameters": {
-            "products": [
-              "ac"
-            ],
-            "type": "web",
-            "background": "green"
-          }
-        };
-        context2['parameters'] = {products,type,background};
-        agent.context.set(context1);
-        agent.context.set(context2);
-        let cxt1 = agent.context.get('context1');
-        let cxt2 = agent.context.get('context2');
+    const [type,background,products] = [agent.parameters['type'],agent.parameters['background'],agent.parameters['products']];
+    let missingSlots = [];
+    if (!type) { missingSlots.push('type'); }
+    if (!background) { missingSlots.push('background'); }
+    if (!products) { missingSlots.push('products'); }
 
-      	agent.add(`Please specify two products for your web banner.`);
-      }
+    if (missingSlots.length === 1){
+      agent.add(`Looks like you didn't provide the banner ${missingSlots[0]}.`);
     }
-    else if(type.toLowerCase() == "ad"){
-      if(products.length >= 1){
+    else if (missingSlots.length === 2){
+        agent.add(`Ok, I need two more things, the banner ${missingSlots[0]} and ${missingSlots[1]} .`);
+    }
+    else if (missingSlots.length === 3){
+        agent.add(`Ok, I need all 3 things still: the banner ${missingSlots[0]}, ${missingSlots[1]} and ${missingSlots[2]}`);
+    } else {
+      let cntxt1 = agent.context.get('projects/saveuserdetails-f5541/agent/sessions/d7749a82-28b5-7ad1-ab24-c83494bd3d10/contexts/createbanner-followup');
+      if(type.toLowerCase() == "web"){
+        if(products.length >= 2){
+              agent.add(`It works.`);
+              agent.add(`You have added the data correctly.`); 
+              agent.add(`Your ${type} banner with ${background} background color having ${products[0]} and ${products[1]} as the products is ready.`);
+          }
+          else{
+            var context1 = {
+              "name": "context2",
+              "lifespanCount": 10,
+              "parameters": {
+                "products": [
+                  "ac"
+                ],
+                "type": "web",
+                "background": "green"
+              }
+            };
+            context1['parameters'] = {products,type,background};
+            agent.context.set(context1);
+            let cxt1 = agent.context.get('context1');
+
+            agent.add(`Please specify two products for your web banner.`);
+        }
+      }
+      else{
         agent.add(`It works.`);
         agent.add(`You have added the data correctly.`);
-        agent.add(`Your ${type} banner with ${background} background having ${products[0]}  as the product image is ready.`);
+        agent.add(`Your ${type} banner with ${background} background color having ${products[0]}  as the product is ready.`);
       }
-      else{
-        agent.add(`Please specify one product for your ad banner !`);
-      }
+
     }
+    
   }
 
   let intentMap = new Map();
