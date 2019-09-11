@@ -286,7 +286,7 @@ const dialogflowAutoImarery = functions.https.onRequest((request, response) => {
     if (products.length == 0) { missingSlots.push('products'); }
 
     if (missingSlots.length === 1){
-      agent.add(`Looks like you didn't provide the banner ${missingSlots[0]}.`);
+      agent.add(`Looks like you didn't provide the banner ${missingSlots[0]}, What is the banner ${missingSlots[0]}?`);
     }
     else if (missingSlots.length === 2){
         agent.add(`Ok, I need two more things, the banner ${missingSlots[0]} and ${missingSlots[1]} .`);
@@ -323,7 +323,7 @@ const dialogflowAutoImarery = functions.https.onRequest((request, response) => {
       else{
         agent.add(`It works.`);
         agent.add(`You have added the data correctly.`);
-        agent.add(`Your ${type} banner with ${background} background color having ${products[0]}  as the product is ready.`);
+        agent.add(`Your ${type} banner with ${background} background color having ${products[0]} as the product is ready.`);
       }
 
     }
