@@ -280,11 +280,15 @@ const dialogflowAutoImarery = functions.https.onRequest((request, response) => {
       if(request.body.hasOwnProperty('queryResult') && request.body.queryResult.hasOwnProperty('allRequiredParamsPresent') && request.body.queryResult.allRequiredParamsPresent){        
         if (request.body.queryResult.parameters.type.toLowerCase() === "web" && request.body.queryResult.parameters.products.length === 1) {          
           request.body.queryResult.allRequiredParamsPresent = false;
-          request.body.queryResult.diagnosticInfo.end_conversation = false;
+          //request.body.queryResult.diagnosticInfo.end_conversation = false;
+          request.body.queryResult.intent.endInteraction = false;
           app.locals.dfBanner.parameters = request.body.queryResult.parameters;
+          console.log('request.body.queryResult',app.locals.dfBanner.parameters);
         } else {
-          
+          console.log('request.body.queryResult: '+app.locals.dfBanner.parameters);
         }
+      }else {
+        console.log('request.body.queryResult: '+app.locals.dfBanner.parameters);          
       }
       function welcome(agent) {
         agent.add(`Welcome to my agent!`);
