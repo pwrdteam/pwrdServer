@@ -11,6 +11,13 @@ const bodyParser  = require('body-parser');
 const jsforce = require('jsforce');
 const axios = require('axios');
 const app = express();
+app.locals={
+  dfBanner:{
+    allRequiredParamsPresent:false,
+    parameters:["a","123"]
+  }
+};
+app.locals.title = 'dfBanner App';
 
 process.env.DEBUG = 'dialogflow:debug'; // enables lib debugging statements
 const sessionId = uuid.v4,
@@ -265,75 +272,92 @@ app.post('/df', dialogflowFirebaseFulfillment);
 
 
 const dialogflowAutoImarery = functions.https.onRequest((request, response) => {
-  const agent = new WebhookClient({ request, response });
-  // console.log('dialogflowAutoImarery Request headers: ' + JSON.stringify(request.headers));
-  // console.log('dialogflowAutoImarery Request body: ' + JSON.stringify(request.body));
-  
-  function welcome(agent) {
-    agent.add(`Welcome to my agent!`);
-  }
-
-  function fallback(agent) {
-    agent.add(`I didn't understand`);
-    agent.add(`I'm sorry, can you try again?`);
-  }
-  
-  async function fnCreateBanner(agent) {
-    const [type,background,products] = [agent.parameters['type'],agent.parameters['background'],agent.parameters['products']];
-    let missingSlots = [];
-    if (!type) { missingSlots.push('type'); }
-    if (!background) { missingSlots.push('background'); }
-    if (products.length == 0) { missingSlots.push('products'); }
-
-    if (missingSlots.length === 1){
-      agent.add(`Looks like you didn't provide the banner ${missingSlots[0]}, What is the banner ${missingSlots[0]}?`);
-    }
-    else if (missingSlots.length === 2){
-        agent.add(`Ok, I need two more things, the banner ${missingSlots[0]} and ${missingSlots[1]} .`);
-    }
-    else if (missingSlots.length === 3){
-        agent.add(`Ok, I need all 3 things still: the banner ${missingSlots[0]}, ${missingSlots[1]} and ${missingSlots[2]}`);
-    } else {
-      let cntxt1 = agent.context.get('projects/saveuserdetails-f5541/agent/sessions/d7749a82-28b5-7ad1-ab24-c83494bd3d10/contexts/createbanner-followup');
-      if(type.toLowerCase() == "web"){
-        if(products.length >= 2){
-              agent.add(`It works.`);
-              agent.add(`You have added the data correctly.`); 
-              agent.add(`Your ${type} banner with ${background} background color having ${products[0]} and ${products[1]} as the products is ready.`);
-          }
-          else{
-            var context1 = {
-              "name": "context2",
-              "lifespanCount": 10,
-              "parameters": {
-                "products": [
-                  "ac"
-                ],
-                "type": "web",
-                "background": "green"
-              }
-            };
-            context1['parameters'] = {products,type,background};
-            agent.context.set(context1);
-            let cxt1 = agent.context.get('context1');
-
-            agent.add(`Please specify two products for your web banner.`);
+  try {
+    
+      const agent = new WebhookClient({ request, response });
+      // console.log('dialogflowAutoImarery Request headers: ' + JSON.stringify(request.headers));
+      // console.log('dialogflowAutoImarery Request body: ' + JSON.stringify(request.body));
+      if(request.body.hasOwnProperty('queryResult') && request.body.queryResult.hasOwnProperty('allRequiredParamsPresent') && request.body.queryResult.allRequiredParamsPresent){        
+        if (request.body.queryResult.parameters.type.toLowerCase() === "web" && request.body.queryResult.parameters.products.length === 1) {          
+          request.body.queryResult.allRequiredParamsPresent = false;
+          request.body.queryResult.diagnosticInfo.end_conversation = false;
+          app.locals.dfBanner.parameters = request.body.queryResult.parameters;
+        } else {
+          
         }
       }
-      else{
-        agent.add(`It works.`);
-        agent.add(`You have added the data correctly.`);
-        agent.add(`Your ${type} banner with ${background} background color having ${products[0]} as the product is ready.`);
+      function welcome(agent) {
+        agent.add(`Welcome to my agent!`);
       }
 
-    }
-    
-  }
+      function fallback(agent) {
+        agent.add(`I didn't understand`);
+        agent.add(`I'm sorry, can you try again?`);
+      }
+      
+      async function fnCreateBanner(agent) {
+        const [type,background,products] = [agent.parameters['type'],agent.parameters['background'],agent.parameters['products']];
+        let missingSlots = [];
+        if (!type) { missingSlots.push('type'); }
+        if (!background) { missingSlots.push('background'); }
+        if (products.length === 0) { missingSlots.push('products'); }
 
-  let intentMap = new Map();
-  //intentMap.set('Default Welcome Intent', welcome);
-  intentMap.set('createBanner', fnCreateBanner);
-  agent.handleRequest(intentMap);  
+        if (missingSlots.length === 1){
+          agent.add(`Looks like you didn't provide the banner ${missingSlots[0]}, What is the banner ${missingSlots[0]}?`);
+        }
+        else if (missingSlots.length === 2){
+            agent.add(`Ok, I need two more things, the banner ${missingSlots[0]} and ${missingSlots[1]} .`);
+        }
+        else if (missingSlots.length === 3){
+            agent.add(`Ok, I need all 3 things still: the banner ${missingSlots[0]}, ${missingSlots[1]} and ${missingSlots[2]}`);
+        } else {
+          let cntxt1 = agent.context.get('projects/saveuserdetails-f5541/agent/sessions/d7749a82-28b5-7ad1-ab24-c83494bd3d10/contexts/createbanner-followup');
+          if(type.toLowerCase() == "web"){
+            if (products.length == 1) {
+              agent.add(`Please specify second products for your web banner.`);          
+            }
+            else if(products.length >= 2){
+                  agent.add(`It works.`);
+                  agent.add(`You have added the data correctly.`); 
+                  agent.add(`Your ${type} banner with ${background} background color having ${products[0]} and ${products[1]} as the products is ready.`);
+              }
+              else{
+                var context1 = {
+                  "name": "context2",
+                  "lifespanCount": 10,
+                  "parameters": {
+                    "products": [
+                      "ac"
+                    ],
+                    "type": "web",
+                    "background": "green"
+                  }
+                };
+                context1['parameters'] = {products,type,background};
+                agent.context.set(context1);
+                let cxt1 = agent.context.get('context1');
+
+                agent.add(`Please specify two products for your web banner.`);
+            }
+          }
+          else{
+            agent.add(`It works.`);
+            agent.add(`You have added the data correctly.`);
+            agent.add(`Your ${type} banner with ${background} background color having ${products[0]} as the product is ready.`);
+          }
+
+        }
+        
+      }
+
+      let intentMap = new Map();
+      //intentMap.set('Default Welcome Intent', welcome);
+      intentMap.set('createBanner', fnCreateBanner);
+      agent.handleRequest(intentMap);
+  } catch (error) {
+    console.error('error in dialogflowAutoImarery: '+error);    
+    response.json({'error in dialogflowAutoImarery': error});
+  } 
 });
 
 app.post('/dfAutoImarery', dialogflowAutoImarery);
