@@ -272,25 +272,24 @@ app.post('/df', dialogflowFirebaseFulfillment);
 
 
 const dialogflowAutoImarery = functions.https.onRequest((request, response) => {
-  try {
-    
-      // console.log('dialogflowAutoImarery Request headers: ' + JSON.stringify(request.headers));
-      // console.log('dialogflowAutoImarery Request body: ' + JSON.stringify(request.body));
+  try {    
+      // // console.log('dialogflowAutoImarery Request headers: ' + JSON.stringify(request.headers));
+      // // console.log('dialogflowAutoImarery Request body: ' + JSON.stringify(request.body));
       
-      if ((!app.locals.dfBanner.isSecondFound) && request.body.hasOwnProperty('queryResult') && request.body.queryResult.hasOwnProperty('parameters') && request.body.queryResult.parameters.hasOwnProperty('products') && request.body.queryResult.parameters.products.length !=0) {
-        app.locals.dfBanner.preReqJson.queryResult.parameters.products.push(request.body.queryResult.parameters.products[0]);
-        request.body = app.locals.dfBanner.preReqJson;
-        app.locals.dfBanner.isSecondFound = true;
-      }
-      if(request.body.hasOwnProperty('queryResult') && request.body.queryResult.hasOwnProperty('allRequiredParamsPresent') && request.body.queryResult.allRequiredParamsPresent){        
-        if (request.body.queryResult.parameters.type.toLowerCase() === "web" && request.body.queryResult.parameters.products.length === 1) {          
-          //request.body.queryResult.allRequiredParamsPresent = false;
-          //request.body.queryResult.diagnosticInfo.end_conversation = false;
-          //request.body.queryResult.intent.endInteraction = false;
-          app.locals.dfBanner.preReqJson = request.body;
-          app.locals.dfBanner.isSecondFound = false;
-        }
-      }
+      // if ((!app.locals.dfBanner.isSecondFound) && request.body.hasOwnProperty('queryResult') && request.body.queryResult.hasOwnProperty('parameters') && request.body.queryResult.parameters.hasOwnProperty('products') && request.body.queryResult.parameters.products.length !=0) {
+      //   app.locals.dfBanner.preReqJson.queryResult.parameters.products.push(request.body.queryResult.parameters.products[0]);
+      //   request.body = app.locals.dfBanner.preReqJson;
+      //   app.locals.dfBanner.isSecondFound = true;
+      // }
+      // if(request.body.hasOwnProperty('queryResult') && request.body.queryResult.hasOwnProperty('allRequiredParamsPresent') && request.body.queryResult.allRequiredParamsPresent){        
+      //   if (request.body.queryResult.parameters.type.toLowerCase() === "web" && request.body.queryResult.parameters.products.length === 1) {          
+      //     //request.body.queryResult.allRequiredParamsPresent = false;
+      //     //request.body.queryResult.diagnosticInfo.end_conversation = false;
+      //     //request.body.queryResult.intent.endInteraction = false;
+      //     app.locals.dfBanner.preReqJson = request.body;
+      //     app.locals.dfBanner.isSecondFound = false;
+      //   }
+      // }
       const agent = new WebhookClient({ request, response });
       function welcome(agent) {
         agent.add(`Welcome to my agent!`);
@@ -302,9 +301,9 @@ const dialogflowAutoImarery = functions.https.onRequest((request, response) => {
       }
       
       async function fnCreateBanner(agent) {
-        if (!app.locals.dfBanner.isSecondFound) {
-          return agent.add(`Please provide second product for your web banner.`);
-        }
+        // if (!app.locals.dfBanner.isSecondFound) {
+        //   return agent.add(`Please provide second product for your web banner.`);
+        // }
         const [type,background,products] = [agent.parameters['type'],agent.parameters['background'],agent.parameters['products']];
         let missingSlots = [];
         if (!type) { missingSlots.push('type'); }
@@ -320,33 +319,29 @@ const dialogflowAutoImarery = functions.https.onRequest((request, response) => {
         else if (missingSlots.length === 3){
             agent.add(`Ok, I need all 3 things still: the banner ${missingSlots[0]}, ${missingSlots[1]} and ${missingSlots[2]}`);
         } else {
-          let cntxt1 = agent.context.get('projects/saveuserdetails-f5541/agent/sessions/d7749a82-28b5-7ad1-ab24-c83494bd3d10/contexts/createbanner-followup');
+          //let cntxt1 = agent.context.get('projects/saveuserdetails-f5541/agent/sessions/d7749a82-28b5-7ad1-ab24-c83494bd3d10/contexts/createbanner-followup');
           if(type.toLowerCase() == "web"){
-            if (products.length == 1) {
-              agent.add(`Please specify second product for your web banner.`);          
-            }
-            else if(products.length >= 2){
+            if(products.length >= 2){
                   agent.add(`It works.`);
                   agent.add(`You have added the data correctly.`); 
                   agent.add(`Your ${type} banner with ${background} background color having ${products[0]} and ${products[1]} as the products is ready.`);
               }
-              else{
-                var context1 = {
-                  "name": "context2",
-                  "lifespanCount": 10,
-                  "parameters": {
-                    "products": [
-                      "ac"
-                    ],
-                    "type": "web",
-                    "background": "green"
-                  }
-                };
-                context1['parameters'] = {products,type,background};
-                agent.context.set(context1);
-                let cxt1 = agent.context.get('context1');
-
+              else {
                 agent.add(`Please specify two products for your web banner.`);
+                // var context1 = {
+                //   "name": "context2",
+                //   "lifespanCount": 10,
+                //   "parameters": {
+                //     "products": [
+                //       "ac"
+                //     ],
+                //     "type": "web",
+                //     "background": "green"
+                //   }
+                // };
+                // context1['parameters'] = {products,type,background};
+                // agent.context.set(context1);
+                // let cxt1 = agent.context.get('context1');
             }
           }
           else{
